@@ -1,5 +1,5 @@
 const mysql = require('mysql2');
-const cTable = require('console.table');
+const { printTable } = require('console-table-printer')
 const inquirer = require('./node_modules/inquirer')
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -8,13 +8,7 @@ const connection = mysql.createConnection({
   database: 'employee_db'
 });
 
-// connection.query(
-//   'SELECT * FROM `table` WHERE `name` = "Page" AND `age` > 45',
-//   function(err, results, fields) {
-//     console.log(results); // results contains rows returned by server
-//     console.log(fields); // fields contains extra meta data about results, if available
-//   }
-// );
+
 
 // connection.query(
 //   'SELECT * FROM `table` WHERE `name` = ? AND `age` > ?',
@@ -24,75 +18,65 @@ const connection = mysql.createConnection({
 //   }
 // );
 
-function mainMenu(){
-inquirer
-  .prompt([
-    {
-      type: "list",
-      message: "welcome to the companies content management system, please make a choice from the options below.",
-      choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role", "quit"],
-      name: "options"
-    },
-  ]).then((answer) => {
-    switch (answer) {
-      case "view all departments":
-        viewDepartment();
-        return;
+function mainMenu() {
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        message: "welcome to the companies content management system, please make a choice from the options below.",
+        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role"],
+        name: "options"
+      },
+    ]).then((answer) => {
+      console.log(answer.options)
+      switch (answer.options) {
+        case "view all departments":
+          connection.query(
+            'SELECT * FROM `departments`', function (err, results) {
+              console.log("\n")
+              printTable(results); // results contains rows returned by server
+              mainMenu();
+            }
+          );
 
-      case "view all roles":
-        viewRoles();
-        return;
+          return
 
-      case "view all employees":
-        viewEmployees();
-        return;
+        case "view all roles":
+          connection.query('SELECT * FROM roles', function (err, results) {
+            console.log("\n")
+            printTable(results);
+            mainMenu();
+          });
+          return;
 
-      case "add a department":
-        addDeptartment();
-        return;
+        case "view all employees":
+          connection.query('SELECT * FROM employees', function (err, results) {
+            console.log("\n")
+            printTable(results);
+            mainMenu();
+          });
+          return;
 
-      case "add a role":
-        addRole();
-        return;
+        case "add a department":
+          addDepartment();
+          return;
 
-      case "add an employee":
-        addEmployee();
-        return;
+        case "add a role":
+          addRole();
+          return;
 
-      case "update an employee role":
-        updateRole();
-        return;
+        case "add an employee":
+          addEmployee();
+          return;
 
-    }
-  });}
-    
-  function viewDepartment(){
+        case "update an employee role":
+          updateRole();
+          return;
 
-    mainMenu()
-  }
-  function viewRoles(){
+      }
+    });
+}
 
-    mainMenu()
-  }
-  function viewEmployees(){
 
-    mainMenu()
-  }
-  function addDeptartment(){
 
-    mainMenu()
-  }
-  function addRole(){
-
-    mainMenu()
-  }
-  function addEmployee(){
-
-    mainMenu()
-  }
-  function updateRole(){
-
-    mainMenu()
-  }
-
-  mainMenu();
+mainMenu();
