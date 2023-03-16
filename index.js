@@ -77,6 +77,114 @@ function mainMenu() {
     });
 }
 
+function addDepartment() {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        message: "please give the new department a name",
+        name: "name"
+      },
+    ]).then((answer) => {
+      console.log(answer.name)
+      connection.query('INSERT INTO departments SET ?',
+      {
+        department_name: `${answer.name}`
+      })
+      mainMenu()
+    })
+}
 
+function addRole() {
+  connection.query('SELECT * FROM departments', function (err, departments) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "input",
+          message: "please give the new role a title",
+          name: "title"
+        },{
+          type: "number",
+          message: "please enter the salary for the new role",
+          name: "salary"
+        },{
+          type: "list",
+          message: "which department would you like to assign the role to?",
+          choices: departments.map(department => ({ name: department.department_name, value: department.id })),
+          name: "department_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          'INSERT INTO roles SET ?',
+          {
+            title: answers.title,
+            salary: answers.salary,
+            department_id: answers.department_id,
+          },
+          function (err, res) {
+            if (err) throw err;
+            console.log(`\nNew role ${answers.title} added to the database!\n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+function addEmployee() {
+  connection.query('SELECT * FROM roles', function (err, roles) {
+    if (err) throw err;
+    connection.query('SELECT * FROM employees', function (err, employees) {
+      if (err) throw err;
+      inquirer
+        .prompt([
+          {
+            type: "input",
+            message: "Please enter the first name of the new employee:",
+            name: "firstName"
+          },
+          {
+            type: "input",
+            message: "Please enter the last name of the new employee:",
+            name: "lastName"
+          },
+          {
+            type: "list",
+            message: "Please select the role for the new employee:",
+            choices: roles.map(role => ({ name: role.title, value: role.id })),
+            name: "roleId"
+          },
+          {
+            type: "list",
+            message: "Please select the manager for the new employee:",
+            choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id })),
+            name: "managerId"
+          }
+        ])
+        .then(answers => {
+          connection.query(
+            'INSERT INTO employees SET ?',
+            {
+              first_name: answers.firstName,
+              last_name: answers.lastName,
+              role_id: answers.roleId,
+              manager_id: answers.managerId
+            },
+            function (err, res) {
+              if (err) throw err;
+              console.log(`\nNew employee ${answers.firstName} ${answers.lastName} added to the database!\n`);
+              mainMenu();
+            }
+          );
+        });
+    });
+  });
+}
+
+function updateRole() {
+
+  mainMenu()
+}
 
 mainMenu();
