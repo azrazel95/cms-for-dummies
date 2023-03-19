@@ -183,8 +183,43 @@ function addEmployee() {
 }
 
 function updateRole() {
-
-  mainMenu()
+  connection.query('SELECT * FROM employees', function (err, employees) {
+    if (err) throw err;
+  connection.query('SELECT * FROM roles', function (err, roles) {
+    if (err) throw err;
+    
+      inquirer
+        .prompt([
+          {
+            type: "list",
+            message: "Please select the emplyoee you'd like to update:",
+            choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.first_name })),
+            name: "employeeId"
+          },
+          {
+            type: "list",
+            message: "Please select the role for the new employee:",
+            choices: roles.map(role => ({ name: role.title, value: role.id })),
+            name: "roleId"
+          }
+          
+        ])
+        .then(answers => {
+          connection.query(
+            `UPDATE employees SET role_id = "${answers.roleId}" WHERE first_name = "${answers.employeeId}"`,
+            {
+              first_name: answers.employeeId,
+              role_id: answers.roleId,
+            },
+            function (err, res) {
+              if (err) throw err;
+              console.log(`\n${answers.employeeId}'s role was updated!\n`);
+              mainMenu();
+            }
+          );
+        });
+    });
+  });
 }
 
 mainMenu();
