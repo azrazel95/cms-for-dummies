@@ -1,40 +1,44 @@
+//importing our modules
 const mysql = require('mysql2');
 const { printTable } = require('console-table-printer')
 const inquirer = require('./node_modules/inquirer')
+//using dotenv to hide our password 
+require('dotenv').config();
+//setting up our mysql connection
 const connection = mysql.createConnection({
   host: 'localhost',
-  user: 'root',
-  password: "Sagittarius95!",
-  database: 'employee_db'
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
 });
 
-
-
-// connection.query(
-//   'SELECT * FROM `table` WHERE `name` = ? AND `age` > ?',
-//   ['Page', 45],
-//   function(err, results) {
-//     console.log(results);
-//   }
-// );
-
+//main menu function
 function mainMenu() {
+  //starting up inquirer
   inquirer
+  //prompting a question
     .prompt([
       {
+        //the main menu
         type: "list",
         message: "welcome to the companies content management system, please make a choice from the options below.",
-        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role"],
+        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "remove a department", "remove a role", "remove an employee", "update an employee role"],
         name: "options"
       },
+      //extracting the chosen answer
     ]).then((answer) => {
-      console.log(answer.options)
+      //switch case statement for the answers
       switch (answer.options) {
         case "view all departments":
+          //querying the connected database
           connection.query(
+            //returns all departments
             'SELECT * FROM `departments`', function (err, results) {
+              //console logs a line break for space
               console.log("\n")
-              printTable(results); // results contains rows returned by server
+              //prints the departments
+              printTable(results); 
+              //returns to main menu upon display of the departments
               mainMenu();
             }
           );
@@ -42,6 +46,7 @@ function mainMenu() {
           return
 
         case "view all roles":
+          //returns all role's
           connection.query('SELECT * FROM roles', function (err, results) {
             console.log("\n")
             printTable(results);
@@ -50,6 +55,7 @@ function mainMenu() {
           return;
 
         case "view all employees":
+          //returns all employees
           connection.query('SELECT * FROM employees', function (err, results) {
             console.log("\n")
             printTable(results);
@@ -58,25 +64,44 @@ function mainMenu() {
           return;
 
         case "add a department":
+          //starts the add department function
           addDepartment();
           return;
 
         case "add a role":
+          //starts the add role function
           addRole();
           return;
 
         case "add an employee":
+          //starts the add employee function
           addEmployee();
           return;
 
+          case "remove a department":
+          //starts the delete department function
+          deleteDepartments();
+          return;
+
+          case "remove a role":
+          //starts the delete role function
+          deleteRole();
+          return;
+
+          case "remove an employee":
+          //starts the delete employee function
+          deleteEmployee();
+          return;
+
         case "update an employee role":
+          //starts the update employee's role function
           updateRole();
           return;
 
       }
     });
 }
-
+//defines the add department function
 function addDepartment() {
   inquirer
     .prompt([
@@ -86,7 +111,7 @@ function addDepartment() {
         name: "name"
       },
     ]).then((answer) => {
-      console.log(answer.name)
+      //updates the departments table with a new department
       connection.query('INSERT INTO departments SET ?',
       {
         department_name: `${answer.name}`
@@ -96,6 +121,7 @@ function addDepartment() {
 }
 
 function addRole() {
+  //gets the departments to choose from within the prompt
   connection.query('SELECT * FROM departments', function (err, departments) {
     if (err) throw err;
     inquirer
@@ -111,11 +137,13 @@ function addRole() {
         },{
           type: "list",
           message: "which department would you like to assign the role to?",
+          //maps over the array of departments to display the name, with a value of the id
           choices: departments.map(department => ({ name: department.department_name, value: department.id })),
           name: "department_id"
         },
       ]).then(answers => {
         connection.query(
+          //inserts the new role into the department dependent on which department was chosen, based on department id
           'INSERT INTO roles SET ?',
           {
             title: answers.title,
@@ -124,6 +152,7 @@ function addRole() {
           },
           function (err, res) {
             if (err) throw err;
+            //success log
             console.log(`\nNew role ${answers.title} added to the database!\n`);
             mainMenu();
           }
@@ -133,8 +162,10 @@ function addRole() {
 };
 
 function addEmployee() {
+  //gets the roles to choose from within the prompt
   connection.query('SELECT * FROM roles', function (err, roles) {
     if (err) throw err;
+    //gets the managers to choose from within the prompt
     connection.query('SELECT * FROM employees', function (err, employees) {
       if (err) throw err;
       inquirer
@@ -152,18 +183,21 @@ function addEmployee() {
           {
             type: "list",
             message: "Please select the role for the new employee:",
+            //maps over the array of roles to display the title of the role, with a value of the id
             choices: roles.map(role => ({ name: role.title, value: role.id })),
             name: "roleId"
           },
           {
             type: "list",
             message: "Please select the manager for the new employee:",
+            //maps over the array of employees to display the names of potential managers, with a value of the id
             choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id })),
             name: "managerId"
           }
         ])
         .then(answers => {
           connection.query(
+            //updates the employee database with the new employee
             'INSERT INTO employees SET ?',
             {
               first_name: answers.firstName,
@@ -173,6 +207,7 @@ function addEmployee() {
             },
             function (err, res) {
               if (err) throw err;
+              //success log
               console.log(`\nNew employee ${answers.firstName} ${answers.lastName} added to the database!\n`);
               mainMenu();
             }
@@ -182,9 +217,99 @@ function addEmployee() {
   });
 }
 
-function updateRole() {
+
+
+function deleteDepartments() {
+  //gets the departments to choose from within the prompt
+  connection.query('SELECT * FROM departments', function (err, departments) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which department would you like to remove??",
+          //maps over the array of departments to display the name, with a value of the id
+          choices: departments.map(department => ({ name: department.department_name, value: department.id })),
+          name: "department_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the department dependent on which department was chosen, based on department id
+          `DELETE FROM departments WHERE id = "${answers.department_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n Department removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+
+function deleteRole() {
+  //gets the roles to choose from within the prompt
+  connection.query('SELECT * FROM roles', function (err, roles) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which role would you like to remove??",
+          //maps over the array of roles to display the name, with a value of the id
+          choices: roles.map(role => ({ name: role.title, value: role.id })),
+          name: "role_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the role dependent on which role was chosen, based on role id
+          `DELETE FROM roles WHERE id = "${answers.role_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n role removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+
+function deleteEmployee() {
+  //gets the employees to choose from within the prompt
   connection.query('SELECT * FROM employees', function (err, employees) {
     if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which employee would you like to remove?",
+          //maps over the array of employees to display the name, with a value of the id
+          choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id })),
+          name: "employee_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the employee dependent on which employee was chosen, based on employee id
+          `DELETE FROM employees WHERE id = "${answers.employee_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n employee removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+function updateRole() {
+  //gets the employees to choose from within the prompt
+  connection.query('SELECT * FROM employees', function (err, employees) {
+    if (err) throw err;
+    //gets the roles to choose from within the prompt
   connection.query('SELECT * FROM roles', function (err, roles) {
     if (err) throw err;
     
@@ -193,12 +318,14 @@ function updateRole() {
           {
             type: "list",
             message: "Please select the emplyoee you'd like to update:",
+            //maps over the array of employees to display choices, with a value of the employees  first name
             choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.first_name })),
             name: "employeeId"
           },
           {
             type: "list",
             message: "Please select the role for the new employee:",
+            //maps over the array of roles to display potential roles, with a value of the id
             choices: roles.map(role => ({ name: role.title, value: role.id })),
             name: "roleId"
           }
@@ -206,6 +333,7 @@ function updateRole() {
         ])
         .then(answers => {
           connection.query(
+            //updates the employees database to give an employee his new role
             `UPDATE employees SET role_id = "${answers.roleId}" WHERE first_name = "${answers.employeeId}"`,
             {
               first_name: answers.employeeId,
@@ -213,6 +341,7 @@ function updateRole() {
             },
             function (err, res) {
               if (err) throw err;
+              //success log
               console.log(`\n${answers.employeeId}'s role was updated!\n`);
               mainMenu();
             }
@@ -221,5 +350,5 @@ function updateRole() {
     });
   });
 }
-
+//starts the main menu function on script load
 mainMenu();
