@@ -22,7 +22,7 @@ function mainMenu() {
         //the main menu
         type: "list",
         message: "welcome to the companies content management system, please make a choice from the options below.",
-        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "update an employee role"],
+        choices: ["view all departments", "view all roles", "view all employees", "add a department", "add a role", "add an employee", "remove a department", "remove a role", "remove an employee", "update an employee role"],
         name: "options"
       },
       //extracting the chosen answer
@@ -76,6 +76,21 @@ function mainMenu() {
         case "add an employee":
           //starts the add employee function
           addEmployee();
+          return;
+
+          case "remove a department":
+          //starts the delete department function
+          deleteDepartments();
+          return;
+
+          case "remove a role":
+          //starts the delete role function
+          deleteRole();
+          return;
+
+          case "remove an employee":
+          //starts the delete employee function
+          deleteEmployee();
           return;
 
         case "update an employee role":
@@ -201,6 +216,94 @@ function addEmployee() {
     });
   });
 }
+
+
+
+function deleteDepartments() {
+  //gets the departments to choose from within the prompt
+  connection.query('SELECT * FROM departments', function (err, departments) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which department would you like to remove??",
+          //maps over the array of departments to display the name, with a value of the id
+          choices: departments.map(department => ({ name: department.department_name, value: department.id })),
+          name: "department_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the department dependent on which department was chosen, based on department id
+          `DELETE FROM departments WHERE id = "${answers.department_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n Department removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+
+function deleteRole() {
+  //gets the roles to choose from within the prompt
+  connection.query('SELECT * FROM roles', function (err, roles) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which role would you like to remove??",
+          //maps over the array of roles to display the name, with a value of the id
+          choices: roles.map(role => ({ name: role.title, value: role.id })),
+          name: "role_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the role dependent on which role was chosen, based on role id
+          `DELETE FROM roles WHERE id = "${answers.role_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n role removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
+
+
+function deleteEmployee() {
+  //gets the employees to choose from within the prompt
+  connection.query('SELECT * FROM employees', function (err, employees) {
+    if (err) throw err;
+    inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "which employee would you like to remove?",
+          //maps over the array of employees to display the name, with a value of the id
+          choices: employees.map(employee => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id })),
+          name: "employee_id"
+        },
+      ]).then(answers => {
+        connection.query(
+          //deletes the employee dependent on which employee was chosen, based on employee id
+          `DELETE FROM employees WHERE id = "${answers.employee_id}"`,
+          function (err, res) {
+            if (err) throw err;
+            //success log
+            console.log(`\n employee removed \n`);
+            mainMenu();
+          }
+        );
+      });
+  });
+};
 
 function updateRole() {
   //gets the employees to choose from within the prompt
