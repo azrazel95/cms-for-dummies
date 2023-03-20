@@ -30,7 +30,7 @@ download the application and run!
 ## Usage
 
 enter your employee's, departments and run it!
-
+![The application!](./images/cms.png "the application!")
 
 
 ## Contributing
